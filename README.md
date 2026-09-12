@@ -1,4 +1,4 @@
-# Recipe_Database
+# The Recipe Box
 
 A collection of all the recipes we have found and use as a family.
 
