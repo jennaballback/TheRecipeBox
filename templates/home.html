@@ -9,10 +9,10 @@
 <body>
     <header class="main-header">
         <!-- Logo Section -->
-        <div class="logo">
+        <a href="{{ url_for('index') }}" class="logo">
             <img src="{{ url_for('static', filename='images/arlogo.png') }}" alt="Logo">
             <span>The Recipe Box</span>
-        </div>
+        </a>
     
         <!-- Navigation Links -->
         <nav class="nav-links">
@@ -29,28 +29,23 @@
             <form action="{{ url_for('all_recipes') }}" method="get" class="d-flex">
                 <input type="text" name="search" class="form-control" placeholder="Search recipes..." value="{{ request.args.get('search', '') }}">
                 <button type="submit" class="btn btn-primary">
-                    <img src="{{ url_for('static', filename='icons/search.png') }}" alt="Search" style="width: 20px; height: 20px;">
+                    <img src="{{ url_for('static', filename='images/search.png') }}" alt="Search" style="width: 20px; height: 20px;">
                 </button>
             </form>
         </div>
     
         <!-- Menu Icon (Placeholder for future filter menu) -->
         <div class="header-icons">
-            <a href="#" class="menu-toggle"><img src="{{ url_for('static', filename='icons/menu.png') }}" alt="Menu"></a>
+            <a href="#" class="menu-toggle"><img src="{{ url_for('static', filename='images/menu.png') }}" alt="Menu"></a>
         </div>
     </header>
-</body>
-</html>
 
 
-
-    <header>
+    <main>
         <h1>Welcome to the Recipe Database</h1>
         <nav>
             <a href="/add">Add</a>
         </nav>
-    </header>
-    <main>
         <h2>Explore Recipes</h2>
         <p>Welcome to the ultimate recipe database! Use the navigation buttons above to browse through the app.</p>
     </main>

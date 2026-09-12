@@ -16,7 +16,7 @@
 <body>
     <div class="container">
         <h1 class="text-center mb-4">Add Your Recipe</h1>
-        <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        <form method="post" action="{{ url_for('submit') }}" enctype="multipart/form-data" class="needs-validation" novalidate>
             <!-- Recipe Details Section -->
             <fieldset class="form-section border p-3 rounded">
                 <legend class="fw-bold">Recipe Details</legend>
@@ -28,22 +28,22 @@
                 <div class="mb-3">
                     <label class="form-label">Type *</label>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="type-breakfast" name="type" value="Breakfast" required>
+                        <input type="radio" class="form-check-input" id="type-breakfast" name="category" value="Breakfast" required>
                         <label class="form-check-label" for="type-breakfast">Breakfast</label>
                     </div>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="type-lunch" name="type" value="Lunch">
+                        <input type="radio" class="form-check-input" id="type-lunch" name="category" value="Lunch">
                         <label class="form-check-label" for="type-lunch">Lunch</label>
                     </div>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="type-dinner" name="type" value="Dinner">
+                        <input type="radio" class="form-check-input" id="type-dinner" name="category" value="Dinner">
                         <label class="form-check-label" for="type-dinner">Dinner</label>
                     </div>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="type-dessert" name="type" value="Dessert">
+                        <input type="radio" class="form-check-input" id="type-dessert" name="category" value="Dessert">
                         <label class="form-check-label" for="type-dessert">Dessert</label>
                     </div>
-                    <div class="invalid-feedback">Please select a type.</div>
+                    <div class="invalid-feedback">Please select a category.</div>
                 </div>
                 <div class="mb-3">
                     <label for="cuisine" class="form-label">Cuisine</label>
@@ -52,8 +52,8 @@
                 <div class="mb-3">
                     <label class="form-label">Season</label>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="season-autumn" name="season" value="Autumn">
-                        <label class="form-check-label" for="season-autumn">Autumn</label>
+                        <input type="radio" class="form-check-input" id="season-fall" name="season" value="Fall">
+                        <label class="form-check-label" for="season-fall">Fall</label>
                     </div>
                     <div class="form-check">
                         <input type="radio" class="form-check-input" id="season-winter" name="season" value="Winter">

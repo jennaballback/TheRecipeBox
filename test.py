@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
+from werkzeug.utils import secure_filename
 import os
 
 # create a Flask app instance
@@ -14,6 +15,7 @@ def get_db_connection():
     # conn = sqlite3.connect(DATABASE) 
     conn = sqlite3.connect(db_path, timeout=10)
     conn.row_factory = sqlite3.Row 
+    conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
 # define a route for the root URL
@@ -32,10 +34,11 @@ def submit():
     name = request.form.get('name')
     category = request.form.get('category')
     cuisine = request.form.get('cuisine')
+    season = request.form.get('season')
     author = request.form.get('author')
-    time = request.form.get('time')
+    time = request.form.get('total_time')
     yield_value = request.form.get('yield')
-    photo = request.form.get('photo')
+    photo = request.files.get('photo')
 
     if not name or not category or not time:
         return "Error: Missing required fields", 400
@@ -43,16 +46,29 @@ def submit():
     # Insert into the database
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute(
-        """
-        INSERT INTO recipes (name, type, cuisine, season, author, total_time, yield, image)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (name, category, cuisine, None, author, time, yield_value, photo)
-    )
-    conn.commit()
+    
+    try:
+        cur.execute(
+            """
+            INSERT INTO recipes (name, type, cuisine, season, author, total_time, yield, image)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (name, category, cuisine, season, author, time, yield_value, None)
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        return "Error: A recipe with this name, type, and cuisine already exists.", 400
+    
     print("Recipe inserted, lastrowid: ", cur.lastrowid)
     recipe_id = cur.lastrowid  # Get the ID of the inserted recipe
+
+    if photo and photo.filename:
+        filename = secure_filename(photo.filename)
+        image_path = f"static/images/{recipe_id}_{filename}"
+        photo.save(image_path)
+        cur.execute("UPDATE recipes SET image = ? WHERE id = ?", (f"/{image_path}", recipe_id))
+        conn.commit()
 
     print("Recipe inserted, lastrowid: ", cur.lastrowid)
     # Verify recipe_id
@@ -68,13 +84,19 @@ def submit():
     ingredient_names = request.form.getlist('ingredient_name[]')
     measurements = request.form.getlist('measurement[]')
     for ingredient_name, measurement in zip(ingredient_names, measurements):
-        cur.execute(
-            """
-            INSERT INTO ingredients (recipe_id, ingredient_name, measurement)
-            VALUES (?, ?, ?)
-            """,
-            (recipe_id, ingredient_name, measurement)
-        )
+        if not ingredient_name:
+            continue
+        try:
+            cur.execute(
+                """
+                INSERT INTO ingredients (recipe_id, ingredient_name, measurement)
+                VALUES (?, ?, ?)
+                """,
+                (recipe_id, ingredient_name, measurement)
+            )
+        except sqlite3.IntegrityError:
+            # Duplicate ingredient name for this recipe — skip rather than crash
+            continue
 
     # Add instructions
     instructions = request.form.getlist('instruction[]')
@@ -101,6 +123,8 @@ def all_recipes():
 
     # Get the search query from the request, default to empty string if not provided
     search_query = request.args.get('search', '').strip()
+    cuisine_filter = request.args.get('cuisine', '').strip()
+    season_filter = request.args.get('season', '').strip()
 
     # Build the SQL query dynamically
     query = "SELECT * FROM recipes WHERE 1=1"
@@ -109,6 +133,14 @@ def all_recipes():
         # Search across name, type, and cuisine with LIKE operator
         query += " AND (name LIKE ? OR type LIKE ? OR cuisine LIKE ?)"
         params.extend([f'%{search_query}%'] * 3)
+
+    if cuisine_filter:
+        query += " AND cuisine = ?"
+        params.append(cuisine_filter)
+
+    if season_filter:
+        query += " AND season = ?"
+        params.append(season_filter)
 
     # Execute the query with parameters to prevent SQL injection
     cur.execute(query, params)
@@ -164,15 +196,22 @@ def modify_recipe(id):
                 conn.close()
                 return "Recipe not found", 404
             
+            name = request.form.get('name')
+            recipe_type = request.form.get('type')
+
+            if not name or not recipe_type:
+                conn.close()
+                return "Error: Name and type are required", 400
+
             cur.execute("""
                 UPDATE recipes
                 SET name = ?, type = ?, cuisine = ?, season = ?, author = ?, total_time = ?, yield = ?, image = ?
                 WHERE id = ?
             """, (
-                request.form['name'],
-                request.form['type'],
+                name,
+                recipe_type,
                 request.form.get('cuisine', None),
-                request.form.get('season', None),  # Use get() with default None
+                request.form.get('season', None), 
                 request.form.get('author', None),
                 request.form.get('total_time', None),
                 request.form.get('yield', None),
@@ -200,6 +239,7 @@ def modify_recipe(id):
             
             if 'photo' in request.files and request.files['photo'].filename:
                 photo = request.files['photo']
+                filename = secure_filename(photo.filename)
                 photo_path = f"static/images/{id}_{photo.filename}"
                 photo.save(photo_path)
                 cur.execute("""
