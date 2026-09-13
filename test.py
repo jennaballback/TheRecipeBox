@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for
 import sqlite3
 from werkzeug.utils import secure_filename
 import os
+import datetime
 
 # create a Flask app instance
 app = Flask(__name__)
@@ -18,10 +19,39 @@ def get_db_connection():
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
+def get_current_season():
+    month = datetime.date.today().month
+    if month in (12, 1, 2):
+        return "Winter"
+    elif month in (3, 4, 5):
+        return "Spring"
+    elif month in (6, 7, 8):
+        return "Summer"
+    else:
+        return "Fall"
+
 # define a route for the root URL
 @app.route("/")
 def index():
-    return render_template('home.html')
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Latest recipes: most recently added, limit to a handful
+    cur.execute("SELECT * FROM recipes ORDER BY id DESC LIMIT 6")
+    latest_recipes = cur.fetchall()
+
+    # Seasonal recipes: matching the current season
+    current_season = get_current_season()
+    cur.execute("SELECT * FROM recipes WHERE season = ? LIMIT 6", (current_season,))
+    seasonal_recipes = cur.fetchall()
+
+    conn.close()
+    return render_template(
+        'home.html',
+        latest_recipes=latest_recipes,
+        seasonal_recipes=seasonal_recipes,
+        current_season=current_season
+    )
 
 @app.route('/add')
 def add():

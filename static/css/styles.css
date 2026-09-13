@@ -62,59 +62,106 @@ body {
     height: 32px; /* Icon size */
 }
 
-/* Sidebar Styles */
+/* Sidebar / Menu Panel */
 .sidebar {
-    height: 100%;
-    width: 250px;
     position: fixed;
     top: 0;
-    right: -250px; /* Start off-screen to the right */
+    right: -320px; /* hidden off-screen by default */
+    width: 300px;
+    height: 100%;
     background-color: #fff;
-    overflow-y: auto;
-    transition: 0.3s;
-    padding-top: 60px;
-    box-shadow: -2px 0 5px rgba(0,0,0,0.1); /* Shadow from the left */
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+    transition: right 0.3s ease;
     z-index: 1000;
+    overflow-y: auto;
 }
 
 .sidebar.active {
     right: 0; /* Slide to the right edge */
 }
 
-.sidebar .nav-link {
-    padding: 10px 15px;
-    text-decoration: none;
-    font-size: 16px;
-    color: #333;
-    display: block;
-}
-
-.sidebar .nav-link:hover {
-    background-color: #f1f1f1;
-}
-
-.dropdown-menu {
-    padding-left: 20px;
-    list-style: none;
-}
-
-.dropdown-menu li a {
-    padding: 5px 15px;
-    font-size: 14px;
-    color: #555;
-    display: block;
-}
-
-.dropdown-menu li a:hover {
-    background-color: #e9ecef;
-}
-
 .close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 24px;
+    background: none;
+    border: 1px solid #333;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    line-height: 1;
     cursor: pointer;
+    float: right;
+}
+
+/* Quick links at the top of the sidebar */
+.sidebar-links {
+    clear: both;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 50px;
+    margin-bottom: 20px;
+}
+
+.sidebar-links a {
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+    text-decoration: none;
+    border-bottom: 2px solid #f2c9c2;
+    padding-bottom: 4px;
+}
+
+/* Collapsible filter sections (Type, Cuisine, Season) */
+.filter-section {
+    margin-bottom: 10px;
+}
+
+.filter-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f2f2f2;
+    border: none;
+    padding: 14px 16px;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.filter-section ul {
+    list-style: none;
+    padding-left: 16px;
+    margin-top: 8px;
+}
+
+.filter-section ul li a {
+    display: block;
+    padding: 6px 0;
+    color: #333;
+    text-decoration: none;
+}
+
+.filter-section ul li a:hover {
+    text-decoration: underline;
+}
+
+/* Dark overlay shown behind the sidebar when it's open */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+}
+
+.sidebar-overlay.active {
+    display: block;
 }
 
 main {

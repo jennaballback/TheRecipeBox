@@ -4,48 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ recipe['name'] }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <header>
-        <h1>{{ recipe['name'] }}</h1>
-        <p><strong>Type:</strong> {{ recipe['type'] }}</p>
-        <p><strong>Cuisine:</strong> {{ recipe['cuisine'] }}</p>
-        <p><strong>Author:</strong> {{ recipe['author'] }}</p>
-        <p><strong>Total Time:</strong> {{ recipe['total_time'] }}</p>
-        <p><strong>Yield:</strong> {{ recipe['yield'] }}</p>
-    </header>
+    {% include 'header.html' %}
 
-    <main>
-        <!-- Ingredients Section -->
-        <section>
-            <h2>Ingredients</h2>
-            <ul>
-                {% for ingredient in ingredients %}
-                    <li>{{ ingredient['ingredient_name'] }} - {{ ingredient['measurement'] }}</li>
-                {% endfor %}
-            </ul>
-        </section>
+    <div class="container mt-4">
+        <header class="mb-4">
+            <h1>{{ recipe['name'] }}</h1>
+            <p><strong>Type:</strong> {{ recipe['type'] }}</p>
+            <p><strong>Cuisine:</strong> {{ recipe['cuisine'] }}</p>
+            <p><strong>Author:</strong> {{ recipe['author'] }}</p>
+            <p><strong>Total Time:</strong> {{ recipe['total_time'] }}</p>
+            <p><strong>Yield:</strong> {{ recipe['yield'] }}</p>
+        </header>
 
-        <!-- Instructions Section -->
-        <section>
-            <h2>Instructions</h2>
-            <ol>
-                {% for instruction in instructions %}
-                    <li>{{ instruction['instruction'] }}</li>
-                {% endfor %}
-            </ol>
-        </section>
+        {% if recipe['image'] %}
+            <img src="{{ recipe['image'] }}" alt="{{ recipe['name'] }}" class="img-fluid mb-4" style="max-width: 500px;">
+        {% endif %}
 
-        <!-- Modify Form -->
-        <a href="{{ url_for('modify_recipe', id=recipe['id']) }}" class="btn btn-warning">Modify Recipe</a>
+        <main>
+            <!-- Ingredients Section -->
+            <section class="mb-4">
+                <h2>Ingredients</h2>
+                <ul>
+                    {% for ingredient in ingredients %}
+                        <li>{{ ingredient['ingredient_name'] }} - {{ ingredient['measurement'] }}</li>
+                    {% endfor %}
+                </ul>
+            </section>
 
-        <!-- Delete Form -->
-        <form action="{{ url_for('delete_recipe', recipe_id=recipe['id']) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this recipe?');">
-            <button type="submit">Delete Recipe</button>
-        </form>
+            <!-- Instructions Section -->
+            <section class="mb-4">
+                <h2>Instructions</h2>
+                <ol>
+                    {% for instruction in instructions %}
+                        <li>{{ instruction['instruction'] }}</li>
+                    {% endfor %}
+                </ol>
+            </section>
 
-        <!-- Back to All Recipes Link -->
-        <a href="{{ url_for('all_recipes') }}">Back to All Recipes</a>
-    </main>
+            <!-- Modify Form -->
+            <a href="{{ url_for('modify_recipe', id=recipe['id']) }}" class="btn btn-warning">Modify Recipe</a>
+
+            <!-- Delete Form -->
+            <form action="{{ url_for('delete_recipe', recipe_id=recipe['id']) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this recipe?');" class="d-inline">
+                <button type="submit" class="btn btn-danger">Delete Recipe</button>
+            </form>
+
+            <!-- Back to All Recipes Link -->
+            <a href="{{ url_for('all_recipes') }}" class="btn btn-secondary">Back to All Recipes</a>
+        </main>
+    </div>
+
+    {% include 'scripts.html' %}
 </body>
 </html>

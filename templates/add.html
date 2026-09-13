@@ -151,6 +151,19 @@
             container.appendChild(row);
         });
 
+        // Photo preview
+        document.getElementById('photo').addEventListener('change', function(event) {
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = ''; // clear any previous preview
+            const file = event.target.files[0];
+            if (file) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.className = 'preview';
+                preview.appendChild(img);
+            }
+        });
+
         // Form validation
         (function() {
             'use strict';

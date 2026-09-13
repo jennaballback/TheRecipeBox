@@ -1,0 +1,79 @@
+<header class="main-header">
+    <a href="{{ url_for('index') }}" class="logo">
+        <img src="{{ url_for('static', filename='images/arlogo.png') }}" alt="Logo">
+        <span>The Recipe Box</span>
+    </a>
+
+    <nav class="nav-links">
+        <a href="/all-recipes"><img src="{{ url_for('static', filename='images/arlogo.png') }}" alt="All Recipes">All Recipes</a>
+        <a href="/breakfast"><img src="{{ url_for('static', filename='images/breakfast.png') }}" alt="Breakfast">Breakfast</a>
+        <a href="/lunch"><img src="{{ url_for('static', filename='images/lunch.png') }}" alt="Lunch">Lunch</a>
+        <a href="/dinner"><img src="{{ url_for('static', filename='images/dinner.png') }}" alt="Dinner">Dinner</a>
+        <a href="/dessert"><img src="{{ url_for('static', filename='images/dessert.png') }}" alt="Dessert">Dessert</a>
+        <a href="/sides"><img src="{{ url_for('static', filename='images/sites.png') }}" alt="Sites">Sites</a>
+    </nav>
+
+    <div class="search-bar">
+        <form action="{{ url_for('all_recipes') }}" method="get">
+            <input type="text" name="search" class="form-control" placeholder="Search recipes..." value="{{ request.args.get('search', '') }}">
+            <button type="submit" class="btn btn-primary">
+                <img src="{{ url_for('static', filename='icons/search.png') }}" alt="Search" style="width: 20px; height: 20px;">
+            </button>
+        </form>
+    </div>
+
+    <div class="header-icons">
+        <a href="#" class="menu-toggle"><img src="{{ url_for('static', filename='icons/menu.png') }}" alt="Menu"></a>
+    </div>
+</header>
+
+<!-- Sidebar / Menu Panel -->
+<div id="sidebar" class="sidebar">
+    <button class="close-btn">×</button>
+
+    <nav class="sidebar-links">
+        <a href="{{ url_for('all_recipes') }}">All Recipes</a>
+        <a href="{{ url_for('add') }}">Add a Recipe</a>
+        <a href="/sites">Sites</a>
+    </nav>
+
+    <hr>
+
+    <div class="filter-section">
+        <button class="filter-toggle" data-bs-toggle="collapse" data-bs-target="#typeCollapse">
+            Type <span>&#9662;</span>
+        </button>
+        <ul class="collapse" id="typeCollapse">
+            <li><a href="/breakfast">Breakfast</a></li>
+            <li><a href="/lunch">Lunch</a></li>
+            <li><a href="/dinner">Dinner</a></li>
+            <li><a href="/dessert">Dessert</a></li>
+        </ul>
+    </div>
+
+    <div class="filter-section">
+        <button class="filter-toggle" data-bs-toggle="collapse" data-bs-target="#cuisineCollapse">
+            Cuisine <span>&#9662;</span>
+        </button>
+        <ul class="collapse" id="cuisineCollapse">
+            <li><a href="{{ url_for('all_recipes', cuisine='Italian') }}">Italian</a></li>
+            <li><a href="{{ url_for('all_recipes', cuisine='Mexican') }}">Mexican</a></li>
+            <li><a href="{{ url_for('all_recipes', cuisine='Asian') }}">Asian</a></li>
+            <li><a href="{{ url_for('all_recipes', cuisine='American') }}">American</a></li>
+        </ul>
+    </div>
+
+    <div class="filter-section">
+        <button class="filter-toggle" data-bs-toggle="collapse" data-bs-target="#seasonCollapse">
+            Season <span>&#9662;</span>
+        </button>
+        <ul class="collapse" id="seasonCollapse">
+            <li><a href="{{ url_for('all_recipes', season='Spring') }}">Spring</a></li>
+            <li><a href="{{ url_for('all_recipes', season='Summer') }}">Summer</a></li>
+            <li><a href="{{ url_for('all_recipes', season='Fall') }}">Fall</a></li>
+            <li><a href="{{ url_for('all_recipes', season='Winter') }}">Winter</a></li>
+        </ul>
+    </div>
+</div>
+
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
