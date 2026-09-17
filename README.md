@@ -1,29 +1,21 @@
 # The Recipe Box
 
-A collection of all the recipes we have found and use as a family.
+A personal recipe management website built with Flask and SQLite. Add, browse, search, filter, and edit your own recipes, complete with photos, ingredients, step-by-step instructions, and seasonal organization.
 
-The "recipe" table has attributes of Name, Type, Cuisine, Season, Author, Total Time, Yield, and an Image.
-- Type includes Breakfast, Lunch, Dinner, Dessert, etc.
-- Cuisine includes Italian, American, Mexican, etc.
-- Season (if applicable) includes Autumn, Winter, Spring, and Summer.
+Features
+- Add recipes with name, type, cuisine, season, author, total time, yield, ingredients, instructions, and a photo
+- Category pages for Breakfast, Lunch, Dinner, and Dessert
+- Search recipes by name, type, or cuisine
+- Filter by cuisine or season via a sidebar menu that slides in from the side
+- Homepage highlights, including a "Latest Recipes" grid and a seasonal "favorites" section that automatically updates based on the current month
 
-The 'ingredients' table and 'instructions' table are children of the parent table 'recipe'.
+Tech Stack
+- Backend: Python, Flask
+- Database: SQLite
+- Frontend: HTML, CSS, JavaScript, Bootstrap 5
 
-The 'ingredients' table has attributes of Ingredients ID, Recipe ID, Ingredient Name, and Measurements.
-- Ingredients ID is the primary key.
-- Recipe ID is a unique number that establishes a connection to the 'recipe' table.
-
-The 'instructions' table has attributes of Instructions ID, Recipe ID, Step Number, and Instructions.
-- Instructions ID is the primary key.
-- Recipe ID is a unique number that establishes a connection to the 'recipe' table.
-- Step Number tracks the numerical order of the instructions.
-
-The 'connections' table is a junction table designed to combine information from other tables.
-It references:
-- A specific recipe (recipe_id).
-- A specific step in the instructions (step_number).
-- A specific ingredient (ingredient_name).
-
-The 'connections' table has attributes of Connections ID, Measurement, Recipe ID, Step Number, and Ingredient Name.
-- Connections ID is the primary key.
-- Recipe ID, Step Number, and Ingredient Name are foreign keys that make the connection between all the tables. 
+Database Schema
+- recipes: id, name, type, cuisine, season, author, total_time, yield, image
+- ingredients: id, recipe_id, ingredient_name, measurement
+- instructions: id, recipe_id, step_number, instruction
+- connections: link specific ingredients to specific instruction steps
