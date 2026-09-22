@@ -4,10 +4,12 @@ A personal recipe management website built with Flask and SQLite. Add, browse, s
 
 Features
 - Add recipes with name, type, cuisine, season, author, total time, yield, ingredients, instructions, and a photo
+- Import a recipe directly from a URL, automatically pulling all the information from sites that support recipe structured data
 - Category pages for Breakfast, Lunch, Dinner, and Dessert
 - Search recipes by name, type, or cuisine
 - Filter by cuisine or season via a sidebar menu that slides in from the side
 - Homepage highlights, including a "Latest Recipes" grid and a seasonal "favorites" section that automatically updates based on the current month
+- A recipe details page with a checklist style ingredient list, numbered step instructions, and a print friendly layout
 
 Tech Stack
 - Backend: Python, Flask
