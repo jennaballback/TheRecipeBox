@@ -11,6 +11,7 @@
         .ingredient-row, .instruction-row { margin-bottom: 10px; }
         .preview { max-width: 200px; margin-top: 10px; }
         .remove-btn { margin-left: 10px; }
+        textarea.auto-grow { resize: none; overflow: hidden; }
     </style>
 </head>
 <body>
@@ -101,7 +102,7 @@
                                     <input type="text" class="form-control" name="measurement[]" value="{{ ing['measurement'] }}" required>
                                 </div>
                                 <div class="col-auto">
-                                    <button type="button" class="btn btn-danger btn-sm remove-ingredient">Remove</button>
+                                    <button type="button" class="btn btn-danger btn-sm remove-row">Remove</button>
                                 </div>
                             </div>
                         </div>
@@ -115,8 +116,8 @@
                 <div id="instructions-container">
                     {% for inst in instructions %}
                         <div class="instruction-row mb-3">
-                            <input type="text" class="form-control" name="instruction[]" value="{{ inst['instruction'] }}" required>
-                            <button type="button" class="btn btn-danger btn-sm remove-instruction remove-btn">Remove</button>
+                            <textarea class="form-control auto-grow" name="instruction[]" rows="1" required>{{ inst['instruction'] }}</textarea>
+                            <button type="button" class="btn btn-danger btn-sm remove-row remove-btn">Remove</button>
                         </div>
                     {% endfor %}
                 </div>
@@ -144,7 +145,7 @@
                         <input type="text" class="form-control" name="measurement[]" placeholder="e.g., 1 cup" required>
                     </div>
                     <div class="col-auto">
-                        <button type="button" class="btn btn-danger btn-sm remove-ingredient">Remove</button>
+                        <button type="button" class="btn btn-danger btn-sm remove-row">Remove</button>
                     </div>
                 </div>
             `;
@@ -157,16 +158,33 @@
             const row = document.createElement('div');
             row.className = 'instruction-row mb-3';
             row.innerHTML = `
-                <input type="text" class="form-control" name="instruction[]" placeholder="e.g., Mix all ingredients" required>
-                <button type="button" class="btn btn-danger btn-sm remove-instruction remove-btn">Remove</button>
+                <textarea class="form-control auto-grow" name="instruction[]" placeholder="e.g., Mix all ingredients" rows="1" required></textarea>
+                <button type="button" class="btn btn-danger btn-sm remove-row remove-btn">Remove</button>
             `;
             container.appendChild(row);
+            row.querySelector('textarea').focus();
         });
 
-        // Remove ingredient or instruction
-        document.querySelectorAll('.remove-ingredient, .remove-instruction').forEach(button => {
-            button.addEventListener('click', function() {
-                this.closest('.ingredient-row, .instruction-row').remove();
+        // Remove ingredient or instruction (event delegation, works for rows added later too)
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-row')) {
+                event.target.closest('.ingredient-row, .instruction-row').remove();
+            }
+        });
+
+        // Auto-grow textareas as text is typed
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('auto-grow')) {
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+            }
+        });
+
+        // Auto-grow pre-filled textareas (existing instructions) on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('textarea.auto-grow').forEach(function(el) {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
             });
         });
 

@@ -4,6 +4,12 @@ from werkzeug.utils import secure_filename
 import os
 import datetime
 
+import requests
+from bs4 import BeautifulSoup
+import json
+import re
+import uuid
+
 # create a Flask app instance
 app = Flask(__name__)
 DATABASE = "recipedatabase.db"
@@ -30,6 +36,122 @@ def get_current_season():
     else:
         return "Fall"
 
+def parse_iso_duration(duration):
+    """Converts an ISO 8601 duration like 'PT1H30M' into '1 hr 30 min'."""
+    if not duration:
+        return None
+    match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?', duration)
+    if not match:
+        return duration
+    hours, minutes = match.groups()
+    parts = []
+    if hours:
+        parts.append(f"{hours} hr")
+    if minutes:
+        parts.append(f"{minutes} min")
+    return " ".join(parts) if parts else duration
+
+
+def is_recipe_type(item):
+    t = item.get('@type')
+    if isinstance(t, list):
+        return 'Recipe' in t
+    return t == 'Recipe'
+
+
+def find_recipe_jsonld(soup):
+    """Searches all JSON-LD script blocks on the page for one describing a Recipe."""
+    for script in soup.find_all('script', type='application/ld+json'):
+        try:
+            data = json.loads(script.string)
+        except (TypeError, ValueError):
+            continue
+        candidates = data if isinstance(data, list) else [data]
+        for item in candidates:
+            if not isinstance(item, dict):
+                continue
+            if '@graph' in item:
+                for sub in item['@graph']:
+                    if isinstance(sub, dict) and is_recipe_type(sub):
+                        return sub
+            if is_recipe_type(item):
+                return item
+    return None
+
+
+def extract_recipe_data(recipe_json):
+    name = recipe_json.get('name')
+
+    author = recipe_json.get('author')
+    if isinstance(author, list):
+        author = author[0] if author else None
+    if isinstance(author, dict):
+        author = author.get('name')
+
+    ingredients_raw = recipe_json.get('recipeIngredient', [])
+    ingredients_split = [split_ingredient(ing) for ing in ingredients_raw]
+
+    instructions = []
+    for step in recipe_json.get('recipeInstructions', []):
+        if isinstance(step, dict):
+            text = step.get('text') or step.get('name')
+            if text:
+                instructions.append(text)
+        elif isinstance(step, str):
+            instructions.append(step)
+
+    image = recipe_json.get('image')
+    if isinstance(image, list):
+        image = image[0] if image else None
+    if isinstance(image, dict):
+        image = image.get('url')
+
+    cuisine = recipe_json.get('recipeCuisine')
+    if isinstance(cuisine, list):
+        cuisine = cuisine[0] if cuisine else None
+
+    category = recipe_json.get('recipeCategory')
+    if isinstance(category, list):
+        category = category[0] if category else None
+
+    yield_value = recipe_json.get('recipeYield')
+    if isinstance(yield_value, list):
+        yield_value = yield_value[0] if yield_value else None
+
+    return {
+        'name': name,
+        'author': author,
+        'cuisine': cuisine,
+        'category': category,
+        'total_time': parse_iso_duration(recipe_json.get('totalTime')),
+        'yield': yield_value,
+        'image': image,
+        'ingredients': ingredients_split,
+        'instructions': instructions
+    }
+
+COMMON_UNITS = [
+    'cups', 'cup', 'tablespoons', 'tablespoon', 'tbsp', 'teaspoons', 'teaspoon', 'tsp',
+    'pounds', 'pound', 'lbs', 'lb', 'ounces', 'ounce', 'oz', 'grams', 'gram', 'g',
+    'kilograms', 'kg', 'milliliters', 'ml', 'liters', 'l', 'pinch', 'pinches',
+    'cloves', 'clove', 'slices', 'slice', 'cans', 'can', 'packages', 'package'
+]
+
+def split_ingredient(text):
+    """Best-effort split of a raw ingredient string into (measurement, name)."""
+    # Matches a leading quantity (numbers, fractions, 'and', ranges) optionally followed by a unit
+    match = re.match(
+        r'^([\d/.\s]+(?:and\s+[\d/.\s]+)?)\s*(' + '|'.join(COMMON_UNITS) + r')?\b\.?\s*',
+        text,
+        re.IGNORECASE
+    )
+    if match and match.group(0).strip():
+        measurement = match.group(0).strip()
+        name = text[match.end():].strip()
+        if name:
+            return measurement, name
+    return '', text
+
 # define a route for the root URL
 @app.route("/")
 def index():
@@ -52,6 +174,48 @@ def index():
         seasonal_recipes=seasonal_recipes,
         current_season=current_season
     )
+
+@app.route('/import-recipe', methods=['GET', 'POST'])
+def import_recipe():
+    if request.method == 'GET':
+        return redirect(url_for('add'))
+
+    url = request.form.get('url', '').strip()
+    if not url:
+        return render_template('add.html', import_error="Please enter a URL.")
+
+    try:
+        response = requests.get(url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
+        response.raise_for_status()
+    except requests.RequestException:
+        return render_template('add.html', import_error="Couldn't reach that page. Check the link and try again.")
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    recipe_json = find_recipe_jsonld(soup)
+
+    if not recipe_json:
+        return render_template('add.html', import_error="Couldn't find recipe data on that page. Try entering it manually.")
+
+    data = extract_recipe_data(recipe_json)
+
+
+    # Download the recipe's photo now, so it's ready to attach if the form is saved
+    if data['image']:
+        try:
+            img_resp = requests.get(data['image'], timeout=10., headers={'User-Agent': 'Mozilla/5.0'})
+            img_resp.raise_for_status()
+            ext = '.jpg'
+            if '.' in data['image'].split('/')[-1]:
+                ext = '.' + data['image'].split('.')[-1].split('?')[0][:4]
+            filename = f"imported_{uuid.uuid4().hex}{ext}"
+            saved_path = f"static/images/{filename}"
+            with open(saved_path, 'wb') as f:
+                f.write(img_resp.content)
+            data['image'] = f"/{saved_path}"
+        except requests.RequestException:
+            data['image'] = None
+
+    return render_template('add.html', imported=data)
 
 @app.route('/add')
 def add():
@@ -98,6 +262,9 @@ def submit():
         image_path = f"static/images/{recipe_id}_{filename}"
         photo.save(image_path)
         cur.execute("UPDATE recipes SET image = ? WHERE id = ?", (f"/{image_path}", recipe_id))
+        conn.commit()
+    elif request.form.get('imported_image_path'):
+        cur.execute("UPDATE recipes SET image = ? WHERE id = ?", (request.form.get('imported_image_path'), recipe_id))
         conn.commit()
 
     print("Recipe inserted, lastrowid: ", cur.lastrowid)

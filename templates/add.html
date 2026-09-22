@@ -11,43 +11,57 @@
         .form-section { margin-bottom: 20px; }
         .ingredient-row, .instruction-row { margin-bottom: 10px; }
         .preview { max-width: 200px; margin-top: 10px; }
+        textarea.auto-grow { resize: none; overflow: hidden; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1 class="text-center mb-4">Add Your Recipe</h1>
+        <div class="mb-4 p-3 border rounded bg-light">
+            <h5>Import from a URL</h5>
+            <form method="post" action="{{ url_for('import_recipe') }}" class="d-flex gap-2">
+                <input type="url" name="url" class="form-control" placeholder="Paste a recipe link..." required>
+                <button type="submit" class="btn btn-primary">Import</button>
+            </form>
+            {% if import_error %}
+                <p class="text-danger mt-2 mb-0">{{ import_error }}</p>
+            {% endif %}
+            {% if imported %}
+                <p class="text-success mt-2 mb-0">Imported! Review the fields below, then submit to save.</p>
+            {% endif %}
+        </div>
         <form method="post" action="{{ url_for('submit') }}" enctype="multipart/form-data" class="needs-validation" novalidate>
             <!-- Recipe Details Section -->
             <fieldset class="form-section border p-3 rounded">
                 <legend class="fw-bold">Recipe Details</legend>
                 <div class="mb-3">
                     <label for="name" class="form-label">Name *</label>
-                    <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Chocolate Cake">
+                    <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., Chocolate Cake" value="{{ imported.name if imported else '' }}">
                     <div class="invalid-feedback">Please enter a recipe name.</div>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Type *</label>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="type-breakfast" name="category" value="Breakfast" required>
+                        <input type="radio" class="form-check-input" id="type-breakfast" name="category" value="Breakfast" {% if imported and imported.category and imported.category|lower == 'breakfast' %}checked{% endif %} required>
                         <label class="form-check-label" for="type-breakfast">Breakfast</label>
                     </div>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="type-lunch" name="category" value="Lunch">
+                        <input type="radio" class="form-check-input" id="type-lunch" name="category" value="Lunch" {% if imported and imported.category and imported.category|lower == 'lunch' %}checked{% endif %} required>
                         <label class="form-check-label" for="type-lunch">Lunch</label>
                     </div>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="type-dinner" name="category" value="Dinner">
+                        <input type="radio" class="form-check-input" id="type-dinner" name="category" value="Dinner" {% if imported and imported.category and imported.category|lower == 'dinner' %}checked{% endif %} required>
                         <label class="form-check-label" for="type-dinner">Dinner</label>
                     </div>
                     <div class="form-check">
-                        <input type="radio" class="form-check-input" id="type-dessert" name="category" value="Dessert">
+                        <input type="radio" class="form-check-input" id="type-dessert" name="category" value="Dessert" {% if imported and imported.category and imported.category|lower == 'dessert' %}checked{% endif %} required>
                         <label class="form-check-label" for="type-dessert">Dessert</label>
                     </div>
                     <div class="invalid-feedback">Please select a category.</div>
                 </div>
                 <div class="mb-3">
                     <label for="cuisine" class="form-label">Cuisine</label>
-                    <input type="text" class="form-control" id="cuisine" name="cuisine" placeholder="e.g., Italian">
+                    <input type="text" class="form-control" id="cuisine" name="cuisine" placeholder="e.g., Italian" value="{{ imported.cuisine if imported else '' }}">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Season</label>
@@ -70,20 +84,26 @@
                 </div>
                 <div class="mb-3">
                     <label for="author" class="form-label">Author</label>
-                    <input type="text" class="form-control" id="author" name="author" placeholder="e.g., Family">
+                    <input type="text" class="form-control" id="author" name="author" placeholder="e.g., Family" value="{{ imported.author if imported else '' }}">
                 </div>
                 <div class="mb-3">
                     <label for="total_time" class="form-label">Total Time</label>
-                    <input type="text" class="form-control" id="total_time" name="total_time" placeholder="e.g., 30 Min">
+                    <input type="text" class="form-control" id="total_time" name="total_time" placeholder="e.g., 30 Min" value="{{ imported.total_time if imported else '' }}">
                 </div>
                 <div class="mb-3">
                     <label for="yield" class="form-label">Yield</label>
-                    <input type="text" class="form-control" id="yield" name="yield" placeholder="e.g., 4 servings">
+                    <input type="text" class="form-control" id="yield" name="yield" placeholder="e.g., 4 servings" value="{{ imported.yield if imported else '' }}">
                 </div>
                 <div class="mb-3">
                     <label for="photo" class="form-label">Photo</label>
                     <input type="file" class="form-control" id="photo" name="photo" accept="image/*">
-                    <div id="photoPreview" class="preview"></div>
+                    <div id="photoPreview" class="preview">
+                        {% if imported and imported.image %}
+                            <img src="{{ imported.image }}" class="preview">
+                            <input type="hidden" name="imported_image_path" value="{{ imported.image }}">
+                            <p class="text-muted small mt-1">Using the imported photo — upload a different one to replace it.</p>
+                        {% endif %}
+                    </div>
                 </div>
             </fieldset>
 
@@ -91,16 +111,31 @@
             <fieldset class="form-section border p-3 rounded">
                 <legend class="fw-bold">Ingredients</legend>
                 <div id="ingredients-container">
-                    <div class="ingredient-row mb-3">
-                        <div class="row">
-                            <div class="col">
-                                <input type="text" class="form-control" name="ingredient_name[]" placeholder="e.g., Flour" required>
-                            </div>
-                            <div class="col">
-                                <input type="text" class="form-control" name="measurement[]" placeholder="e.g., 1 cup" required>
+                    {% if imported and imported.ingredients %}
+                        {% for measurement, name in imported.ingredients %}
+                        <div class="ingredient-row mb-3">
+                            <div class="row">
+                                <div class="col">
+                                    <input type="text" class="form-control" name="ingredient_name[]" value="{{ name }}" required>
+                                </div>
+                                <div class="col">
+                                    <input type="text" class="form-control" name="measurement[]" value="{{ measurement }}">
+                                </div>
                             </div>
                         </div>
-                    </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="ingredient-row mb-3">
+                            <div class="row">
+                                <div class="col">
+                                    <input type="text" class="form-control" name="ingredient_name[]" placeholder="e.g., Flour" required>
+                                </div>
+                                <div class="col">
+                                    <input type="text" class="form-control" name="measurement[]" placeholder="e.g., 1 cup" required>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
                 <button type="button" id="add-ingredient" class="btn btn-primary">Add Ingredient</button>
             </fieldset>
@@ -109,9 +144,17 @@
             <fieldset class="form-section border p-3 rounded">
                 <legend class="fw-bold">Instructions</legend>
                 <div id="instructions-container">
-                    <div class="instruction-row mb-3">
-                        <input type="text" class="form-control" name="instruction[]" placeholder="e.g., Mix all ingredients" required>
-                    </div>
+                    {% if imported and imported.instructions %}
+                        {% for step in imported.instructions %}
+                        <div class="instruction-row mb-3">
+                            <textarea class="form-control auto-grow" name="instruction[]" rows="1" required>{{ step }}</textarea>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="instruction-row mb-3">
+                            <textarea class="form-control auto-grow" name="instruction[]" placeholder="e.g., Mix all ingredients" rows="1" required></textarea>
+                        </div>
+                    {% endif %}
                 </div>
                 <button type="button" id="add-instruction" class="btn btn-primary">Add Instruction</button>
             </fieldset>
@@ -147,8 +190,25 @@
             const container = document.getElementById('instructions-container');
             const row = document.createElement('div');
             row.className = 'instruction-row mb-3';
-            row.innerHTML = `<input type="text" class="form-control" name="instruction[]" placeholder="e.g., Mix all ingredients" required>`;
+            row.innerHTML = `<textarea class="form-control auto-grow" name="instruction[]" placeholder="e.g., Mix all ingredients" rows="1" required></textarea>`;
             container.appendChild(row);
+            row.querySelector('textarea').focus();
+        });
+
+        // Auto-grow textareas as text is typed
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('auto-grow')) {
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+            }
+        });
+
+        // Auto-grow imported/pre-filled textareas on page load too
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('textarea.auto-grow').forEach(function(el) {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+            });
         });
 
         // Photo preview
