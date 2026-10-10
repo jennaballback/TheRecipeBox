@@ -120,6 +120,8 @@ h1, h2, h3 {
 }
 
 .main-header .page {
+    max-width: 1440px;
+    padding-inline: 32px;
     display: flex;
     align-items: center;
     gap: 22px;
@@ -233,7 +235,7 @@ h1, h2, h3 {
 }
 
 @media (max-width: 480px) {
-    .main-header .page { gap: 10px 12px; flex-wrap: wrap; }
+    .main-header .page { gap: 10px 12px; flex-wrap: wrap; padding-inline: 20px; }
     .search-bar { order: 3; flex-basis: 100%; margin-left: 0; }
     .menu-toggle { margin-left: auto; }
     .logo { font-size: 18px; }
@@ -681,8 +683,16 @@ h1, h2, h3 {
 }
 
 .list-head .pill.on {
-    background: var(--midnight);
+    background: var(--blush);
+    color: var(--midnight);
+    box-shadow: inset 0 0 0 1.5px var(--midnight);
+}
+
+/* Blush is the Breakfast banner color, so its selected pill uses Deep Rosewood */
+.list-head.cat-breakfast .pill.on {
+    background: var(--rose-deep);
     color: var(--cream);
+    box-shadow: none;
 }
 
 .results-row {
