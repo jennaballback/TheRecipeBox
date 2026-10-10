@@ -1,0 +1,99 @@
+{# Shared pieces of the Add and Edit recipe forms.
+   `r` holds the current values (empty on a new recipe). #}
+
+{% macro details(r, type_field, time_required=false) %}
+<section class="form-card">
+    <h2>Recipe details</h2>
+    <div class="field-grid">
+        <div class="field field-wide">
+            <label for="name">Name <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" class="field-input" id="name" name="name" required placeholder="e.g., Chocolate Cake" value="{{ r.name or '' }}">
+            <p class="field-error">Please enter a recipe name.</p>
+        </div>
+
+        <fieldset class="field field-wide">
+            <legend>Type <span class="req" aria-hidden="true">*</span></legend>
+            <div class="choice-group">
+                {% for type in ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Sides'] %}
+                <input type="radio" class="visually-hidden" id="type-{{ type|lower }}" name="{{ type_field }}" value="{{ type }}" {% if r.type and r.type|lower == type|lower %}checked{% endif %} required>
+                <label for="type-{{ type|lower }}" class="choice cat-{{ type|lower }}">{{ type }}</label>
+                {% endfor %}
+            </div>
+            <p class="field-error">Please pick a type.</p>
+        </fieldset>
+
+        <div class="field">
+            <label for="cuisine">Cuisine</label>
+            <input type="text" class="field-input" id="cuisine" name="cuisine" placeholder="e.g., Italian" value="{{ r.cuisine or '' }}">
+        </div>
+
+        <div class="field">
+            <label for="author">Author</label>
+            <input type="text" class="field-input" id="author" name="author" placeholder="e.g., Family" value="{{ r.author or '' }}">
+        </div>
+
+        <div class="field">
+            <label for="total_time">Total time{% if time_required %} <span class="req" aria-hidden="true">*</span>{% endif %}</label>
+            <input type="text" class="field-input" id="total_time" name="total_time" placeholder="e.g., 30 Min" value="{{ r.total_time or '' }}" {% if time_required %}required{% endif %}>
+            <p class="field-error">Please enter how long it takes.</p>
+        </div>
+
+        <div class="field">
+            <label for="yield">Yield</label>
+            <input type="text" class="field-input" id="yield" name="yield" placeholder="e.g., 4 servings" value="{{ r.yield or '' }}">
+        </div>
+
+        <fieldset class="field field-wide">
+            <legend>Season</legend>
+            <div class="choice-group">
+                {% for season in ['Fall', 'Winter', 'Spring', 'Summer'] %}
+                <input type="radio" class="visually-hidden" id="season-{{ season|lower }}" name="season" value="{{ season }}" {% if r.season == season %}checked{% endif %}>
+                <label for="season-{{ season|lower }}" class="choice choice-season">{{ season }}</label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <div class="field field-wide">
+            <label for="photo">Photo</label>
+            <input type="file" class="field-input field-file" id="photo" name="photo" accept="image/*">
+            <div id="photoPreview" class="photo-preview">{{ caller() if caller }}</div>
+        </div>
+    </div>
+</section>
+{% endmacro %}
+
+{% macro ingredient_row(amount='', name='', amount_required=true) %}
+<div class="ingredient-row">
+    <input type="text" class="field-input" name="measurement[]" value="{{ amount or '' }}" placeholder="e.g., 1 cup" aria-label="Amount" {% if amount_required %}required{% endif %}>
+    <input type="text" class="field-input" name="ingredient_name[]" value="{{ name }}" placeholder="e.g., Flour" aria-label="Ingredient" required>
+    <button type="button" class="btn-text remove-row">Remove</button>
+</div>
+{% endmacro %}
+
+{% macro instruction_row(text='') %}
+<div class="instruction-row">
+    <textarea class="field-input auto-grow" name="instruction[]" placeholder="e.g., Mix all ingredients" rows="1" aria-label="Step" required>{{ text }}</textarea>
+    <button type="button" class="btn-text remove-row">Remove</button>
+</div>
+{% endmacro %}
+
+{% macro ingredients_card() %}
+<section class="form-card">
+    <h2>Ingredients</h2>
+    <div class="row-labels" aria-hidden="true"><span>Amount</span><span>Ingredient</span></div>
+    <div id="ingredients-container" class="row-list">
+        {{ caller() }}
+    </div>
+    <button type="button" id="add-ingredient" class="btn btn-ghost">+ Add ingredient</button>
+</section>
+{% endmacro %}
+
+{% macro instructions_card() %}
+<section class="form-card">
+    <h2>Instructions</h2>
+    <div id="instructions-container" class="row-list steps">
+        {{ caller() }}
+    </div>
+    <button type="button" id="add-instruction" class="btn btn-ghost">+ Add step</button>
+</section>
+{% endmacro %}
