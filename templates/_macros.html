@@ -1,0 +1,29 @@
+{% macro cat_class(type) -%}
+    {#- Meal types that have their own color in styles.css -#}
+    {%- if type and type|capitalize in ['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Sides'] -%}cat-{{ type|lower }}{%- else -%}cat-other{%- endif -%}
+{%- endmacro %}
+
+{% macro recipe_card(recipe) %}
+<a href="{{ url_for('recipe_details', id=recipe['id']) }}" class="recipe-card {{ cat_class(recipe['type']) }}">
+    {% if recipe['image'] %}
+        <img src="{{ recipe['image'] }}" alt="{{ recipe['name'] }}" loading="lazy">
+    {% else %}
+        <div class="no-photo" aria-hidden="true"></div>
+    {% endif %}
+    <div class="recipe-card-body">
+        <div class="chip-row">
+            {% if recipe['type'] %}<span class="chip chip-cat">{{ recipe['type'] }}</span>{% endif %}
+            {% if recipe['season'] %}<span class="chip chip-season">{{ recipe['season'] }}</span>{% endif %}
+        </div>
+        <h3>{{ recipe['name'] }}</h3>
+        <div class="card-meta">
+            {% if recipe['total_time'] %}
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>{{ recipe['total_time'] }}</span>
+            {% endif %}
+            {% if recipe['yield'] %}
+            <span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 15h18M5 15a7 7 0 0 1 14 0M12 6v2"/></svg>{{ 'Makes ' ~ recipe['yield'] if recipe['yield'].isdigit() else 'Serves ' ~ recipe['yield'] }}</span>
+            {% endif %}
+        </div>
+    </div>
+</a>
+{% endmacro %}

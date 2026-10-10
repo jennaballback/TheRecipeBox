@@ -36,6 +36,16 @@ def get_current_season():
     else:
         return "Fall"
 
+def get_cuisines(conn, recipe_type=None):
+    """Distinct cuisines in the database (optionally for one meal type), for the filter pills."""
+    query = "SELECT DISTINCT cuisine FROM recipes WHERE cuisine IS NOT NULL AND cuisine != ''"
+    params = []
+    if recipe_type:
+        query += " AND type = ?"
+        params.append(recipe_type)
+    query += " ORDER BY cuisine"
+    return [row['cuisine'] for row in conn.execute(query, params).fetchall()]
+
 def parse_iso_duration(duration):
     """Converts an ISO 8601 duration like 'PT1H30M' into '1 hr 30 min'."""
     if not duration:
@@ -167,12 +177,19 @@ def index():
     cur.execute("SELECT * FROM recipes WHERE season = ? LIMIT 6", (current_season,))
     seasonal_recipes = cur.fetchall()
 
+    # Recipe counts per meal type, for the category tiles
+    cur.execute("SELECT type, COUNT(*) AS n FROM recipes GROUP BY type")
+    category_counts = {row['type']: row['n'] for row in cur.fetchall() if row['type']}
+    total_recipes = sum(category_counts.values())
+
     conn.close()
     return render_template(
         'home.html',
         latest_recipes=latest_recipes,
         seasonal_recipes=seasonal_recipes,
-        current_season=current_season
+        current_season=current_season,
+        category_counts=category_counts,
+        total_recipes=total_recipes
     )
 
 @app.route('/import-recipe', methods=['GET', 'POST'])
@@ -342,9 +359,17 @@ def all_recipes():
     # Execute the query with parameters to prevent SQL injection
     cur.execute(query, params)
     recipes = cur.fetchall()
+    cuisines = get_cuisines(conn)
 
     conn.close()
-    return render_template('all.html', recipes=recipes, search_query=search_query)
+    return render_template(
+        'all.html',
+        recipes=recipes,
+        search_query=search_query,
+        cuisines=cuisines,
+        cuisine_filter=cuisine_filter,
+        season_filter=season_filter
+    )
 
 # define a route and a view function
 @app.route('/all-recipes/<int:id>')
@@ -358,10 +383,31 @@ def recipe_details(id):
 
 @app.route('/<string:category>')
 def category_recipes(category):
+    category = category.capitalize()
+    cuisine_filter = request.args.get('cuisine', '').strip()
+    season_filter = request.args.get('season', '').strip()
+
+    query = "SELECT * FROM recipes WHERE type = ?"
+    params = [category]
+    if cuisine_filter:
+        query += " AND cuisine = ?"
+        params.append(cuisine_filter)
+    if season_filter:
+        query += " AND season = ?"
+        params.append(season_filter)
+
     conn = get_db_connection()
-    recipes = conn.execute('SELECT * FROM recipes WHERE type = ?', (category.capitalize(),)).fetchall()
+    recipes = conn.execute(query, params).fetchall()
+    cuisines = get_cuisines(conn, category)
     conn.close()
-    return render_template('category.html', recipes=recipes, category=category.capitalize())
+    return render_template(
+        'category.html',
+        recipes=recipes,
+        category=category,
+        cuisines=cuisines,
+        cuisine_filter=cuisine_filter,
+        season_filter=season_filter
+    )
 
 # delete a recipe
 @app.route('/delete_recipe/<int:recipe_id>', methods=['POST'])

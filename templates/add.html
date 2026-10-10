@@ -17,7 +17,7 @@
 <body>
     <div class="container">
         <h1 class="text-center mb-4">Add Your Recipe</h1>
-        <div class="mb-4 p-3 border rounded bg-light">
+        <div class="mb-4 p-3 border rounded bg-light" id="import">
             <h5>Import from a URL</h5>
             <form method="post" action="{{ url_for('import_recipe') }}" class="d-flex gap-2">
                 <input type="url" name="url" class="form-control" placeholder="Paste a recipe link..." required>
@@ -56,6 +56,10 @@
                     <div class="form-check">
                         <input type="radio" class="form-check-input" id="type-dessert" name="category" value="Dessert" {% if imported and imported.category and imported.category|lower == 'dessert' %}checked{% endif %} required>
                         <label class="form-check-label" for="type-dessert">Dessert</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" id="type-sides" name="category" value="Sides" {% if imported and imported.category and imported.category|lower == 'sides' %}checked{% endif %} required>
+                        <label class="form-check-label" for="type-sides">Sides</label>
                     </div>
                     <div class="invalid-feedback">Please select a category.</div>
                 </div>
