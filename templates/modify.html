@@ -43,6 +43,10 @@
                         <input type="radio" class="form-check-input" id="type-dessert" name="type" value="Dessert" {% if recipe['type'] == 'Dessert' %}checked{% endif %}>
                         <label class="form-check-label" for="type-dessert">Dessert</label>
                     </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" id="type-sides" name="type" value="Sides" {% if recipe['type'] == 'Sides' %}checked{% endif %}>
+                        <label class="form-check-label" for="type-sides">Sides</label>
+                    </div>
                     <div class="invalid-feedback">Please select a type.</div>
                 </div>
                 <div class="mb-3">

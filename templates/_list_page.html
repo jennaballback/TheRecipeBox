@@ -1,0 +1,59 @@
+{#- Shared layout for the category and All Recipes pages.
+    Expects: recipes, title, list_class, page_url(cuisine, season), cuisines,
+    cuisine_filter, season_filter, empty_message, add_label. -#}
+{% from '_macros.html' import recipe_card %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} &middot; The Recipe Box</title>
+    {% include 'head.html' %}
+</head>
+<body>
+    {% include 'header.html' %}
+
+    <main>
+        <section class="list-head {{ list_class }}">
+            <div class="page">
+                <div class="list-title">
+                    <h1>{{ title }}</h1>
+                    <span>{{ recipes|length }} recipe{{ 's' if recipes|length != 1 }}</span>
+                </div>
+                <div class="filters">
+                    <div class="filter-group">
+                        <span>Cuisine</span>
+                        <a href="{{ page_url(None, season_filter) }}" class="pill {{ 'on' if not cuisine_filter }}">All</a>
+                        {% for cuisine in cuisines %}
+                            <a href="{{ page_url(cuisine, season_filter) }}" class="pill {{ 'on' if cuisine == cuisine_filter }}">{{ cuisine }}</a>
+                        {% endfor %}
+                    </div>
+                    <div class="filter-group">
+                        <span>Season</span>
+                        <a href="{{ page_url(cuisine_filter, None) }}" class="pill {{ 'on' if not season_filter }}">Any</a>
+                        {% for season in ['Spring', 'Summer', 'Fall', 'Winter'] %}
+                            <a href="{{ page_url(cuisine_filter, season) }}" class="pill {{ 'on' if season == season_filter }}">{{ season }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="page">
+                {% if not recipes %}
+                    <p class="empty-note">{{ empty_message }}</p>
+                {% endif %}
+                <div class="recipe-grid">
+                    {% for recipe in recipes %}
+                        {{ recipe_card(recipe) }}
+                    {% endfor %}
+                    <a href="{{ url_for('add') }}" class="add-card"><span><b>+ {{ add_label }}</b>Paste a link to import it, or type it in.</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    {% include 'scripts.html' %}
+</body>
+</html>
