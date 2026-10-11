@@ -510,8 +510,7 @@ def delete_recipe(recipe_id):
         conn.commit()
         if cur.rowcount == 0:
             return f"No recipe found with ID {recipe_id}.", 404
-        else:
-            return f"Recipe with ID {recipe_id} deleted successfully.", 200
+        return redirect(url_for('index'))
     except sqlite3.Error as e:
         conn.rollback()
         return f"Error deleting recipe: {e}", 500
