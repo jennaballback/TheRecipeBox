@@ -500,16 +500,32 @@ def category_recipes(category):
         season_filter=season_filter
     )
 
+# remove a deleted recipe's photo from static/images, unless another recipe still uses it
+def delete_recipe_photo(cur, image):
+    images_dir = os.path.abspath(os.path.join('static', 'images'))
+    photo_path = os.path.abspath(image.lstrip('/'))
+    if os.path.dirname(photo_path) != images_dir or not os.path.isfile(photo_path):
+        return
+    if cur.execute("SELECT 1 FROM recipes WHERE image = ?", (image,)).fetchone():
+        return
+    try:
+        os.remove(photo_path)
+    except OSError as e:
+        print(f"Could not delete photo {photo_path}: {e}")
+
 # delete a recipe
 @app.route('/delete_recipe/<int:recipe_id>', methods=['POST'])
 def delete_recipe(recipe_id):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
+        row = cur.execute("SELECT image FROM recipes WHERE id = ?", (recipe_id,)).fetchone()
         cur.execute("DELETE FROM recipes WHERE id = ?", (recipe_id,))
         conn.commit()
         if cur.rowcount == 0:
             return f"No recipe found with ID {recipe_id}.", 404
+        if row and row['image']:
+            delete_recipe_photo(cur, row['image'])
         return redirect(url_for('index'))
     except sqlite3.Error as e:
         conn.rollback()
