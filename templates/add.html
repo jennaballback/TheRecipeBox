@@ -1,4 +1,4 @@
-{% from '_recipe_form.html' import details, ingredient_row, instruction_row, ingredients_card, instructions_card %}
+{% from '_recipe_form.html' import details, ingredient_row, ingredient_rows, instruction_row, ingredients_card, instructions_card %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -43,9 +43,7 @@
 
             {% call ingredients_card() %}
                 {% if imported and imported.ingredients %}
-                    {% for measurement, name in imported.ingredients %}
-                        {{ ingredient_row(measurement, name, amount_required=false) }}
-                    {% endfor %}
+                    {{ ingredient_rows(imported.ingredients, amount_required=false) }}
                 {% else %}
                     {{ ingredient_row() }}
                 {% endif %}

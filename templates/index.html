@@ -55,16 +55,19 @@
                     <h2>Ingredients</h2>
                     <span class="ingredient-count" id="ingredient-count">0 of {{ ingredients|length }}</span>
                 </div>
-                <ul class="ingredient-list">
-                    {% for ingredient in ingredients %}
-                        <li>
-                            <label>
-                                <input type="checkbox">
-                                <span>{% if ingredient['measurement'] %}<span class="qty">{{ ingredient['measurement'] }}</span> {% endif %}{{ ingredient['ingredient_name'] }}</span>
-                            </label>
-                        </li>
-                    {% endfor %}
-                </ul>
+                {% for section, rows in ingredient_groups %}
+                    {% if section %}<h3 class="ingredient-section">{{ section }}</h3>{% endif %}
+                    <ul class="ingredient-list">
+                        {% for ingredient in rows %}
+                            <li>
+                                <label>
+                                    <input type="checkbox">
+                                    <span>{% if ingredient['measurement'] %}<span class="qty">{{ ingredient['measurement'] }}</span> {% endif %}{{ ingredient['ingredient_name'] }}</span>
+                                </label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
             </aside>
 
             <section>
@@ -81,7 +84,7 @@
     {% include 'scripts.html' %}
     <script>
     // Count checked ingredients as you cook
-    document.querySelector('.ingredient-list').addEventListener('change', function() {
+    document.querySelector('.ingredients-panel').addEventListener('change', function() {
         const boxes = this.querySelectorAll('input[type="checkbox"]');
         const checked = this.querySelectorAll('input:checked').length;
         document.getElementById('ingredient-count').textContent = checked + ' of ' + boxes.length;

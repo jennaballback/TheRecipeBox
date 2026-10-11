@@ -17,12 +17,37 @@
         const row = document.createElement('div');
         row.className = 'ingredient-row';
         row.innerHTML = `
+            <input type="hidden" name="row_kind[]" value="ingredient">
             <input type="text" class="field-input" name="measurement[]" placeholder="e.g., 1 cup" aria-label="Amount" required>
             <input type="text" class="field-input" name="ingredient_name[]" placeholder="e.g., Flour" aria-label="Ingredient" required>
             ${removeButton}
         `;
         document.getElementById('ingredients-container').appendChild(row);
         row.querySelector('input').focus();
+    });
+
+    // Add a section heading (e.g. "Topping") that groups the ingredients below it
+    document.getElementById('add-section').addEventListener('click', function() {
+        const row = document.createElement('div');
+        row.className = 'section-row';
+        row.innerHTML = `
+            <input type="hidden" name="row_kind[]" value="section">
+            <input type="hidden" name="measurement[]" value="">
+            <input type="text" class="field-input section-input" name="ingredient_name[]" placeholder="Section, e.g., Topping" aria-label="Section name" required>
+            <div class="section-move">
+                <button type="button" class="btn-text move-row" data-dir="up" aria-label="Move section up" title="Move up">&uarr;</button>
+                <button type="button" class="btn-text move-row" data-dir="down" aria-label="Move section down" title="Move down">&darr;</button>
+            </div>
+            ${removeButton}
+        `;
+        const container = document.getElementById('ingredients-container');
+        // The first section usually names the ingredients already in the list, so it goes on top
+        if (container.querySelector('.section-row')) {
+            container.appendChild(row);
+        } else {
+            container.prepend(row);
+        }
+        row.querySelector('.section-input').focus();
     });
 
     // Add instruction row
@@ -37,10 +62,20 @@
         row.querySelector('textarea').focus();
     });
 
-    // Remove an ingredient or instruction (works for rows added later too)
+    // Remove a row, or move a section heading up or down past one ingredient (works for rows added later too)
     form.addEventListener('click', function(event) {
-        if (event.target.classList.contains('remove-row')) {
-            event.target.closest('.ingredient-row, .instruction-row').remove();
+        const button = event.target.closest('button');
+        if (!button) return;
+        if (button.classList.contains('remove-row')) {
+            button.closest('.ingredient-row, .section-row, .instruction-row').remove();
+        } else if (button.classList.contains('move-row')) {
+            const row = button.closest('.section-row');
+            if (button.dataset.dir === 'up' && row.previousElementSibling) {
+                row.previousElementSibling.before(row);
+            } else if (button.dataset.dir === 'down' && row.nextElementSibling) {
+                row.nextElementSibling.after(row);
+            }
+            button.focus();
         }
     });
 

@@ -9,6 +9,9 @@ from bs4 import BeautifulSoup
 import json
 import re
 import uuid
+from itertools import groupby
+
+from Main_DataBase import upgrade_schema
 
 # create a Flask app instance
 app = Flask(__name__)
@@ -24,6 +27,52 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row 
     conn.execute("PRAGMA foreign_keys = ON;")
     return conn
+
+# Bring an older database file up to the current schema before serving anything
+_conn = sqlite3.connect(os.path.abspath(DATABASE))
+upgrade_schema(_conn)
+_conn.close()
+
+
+def read_ingredient_rows(form):
+    """Reads the ingredient list from the Add/Edit form as (section, measurement, name) rows.
+
+    The form sends one entry per row in `row_kind[]`: 'section' rows are headings like
+    "Topping" that apply to the ingredients below them, 'ingredient' rows are ingredients.
+    """
+    kinds = form.getlist('row_kind[]')
+    names = form.getlist('ingredient_name[]')
+    measurements = form.getlist('measurement[]')
+    if len(kinds) != len(names):
+        kinds = ['ingredient'] * len(names)
+
+    rows = []
+    section = None
+    for kind, name, measurement in zip(kinds, names, measurements):
+        name = (name or '').strip()
+        if kind == 'section':
+            section = name or None
+        elif name:
+            rows.append((section, (measurement or '').strip(), name))
+    return rows
+
+
+def save_ingredients(cur, recipe_id, rows):
+    for position, (section, measurement, name) in enumerate(rows, start=1):
+        cur.execute(
+            """
+            INSERT INTO ingredients (recipe_id, section, position, ingredient_name, measurement)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (recipe_id, section, position, name, measurement)
+        )
+
+
+def load_ingredients(conn, recipe_id):
+    return conn.execute(
+        "SELECT section, measurement, ingredient_name FROM ingredients WHERE recipe_id = ? ORDER BY position, id",
+        (recipe_id,)
+    ).fetchall()
 
 def get_current_season():
     month = datetime.date.today().month
@@ -99,7 +148,7 @@ def extract_recipe_data(recipe_json):
         author = author.get('name')
 
     ingredients_raw = recipe_json.get('recipeIngredient', [])
-    ingredients_split = [split_ingredient(ing) for ing in ingredients_raw]
+    ingredients_split = [(None, *split_ingredient(ing)) for ing in ingredients_raw]
 
     instructions = []
     for step in recipe_json.get('recipeInstructions', []):
@@ -149,9 +198,10 @@ COMMON_UNITS = [
 
 def split_ingredient(text):
     """Best-effort split of a raw ingredient string into (measurement, name)."""
-    # Matches a leading quantity (numbers, fractions, 'and', ranges) optionally followed by a unit
+    # Matches a leading quantity (numbers, fractions, 'and', ranges) optionally followed by a unit,
+    # plus a weight in brackets after it, so "1/2 cup (100g) sugar" keeps "(100g)" with the amount
     match = re.match(
-        r'^([\d/.\s]+(?:and\s+[\d/.\s]+)?)\s*(' + '|'.join(COMMON_UNITS) + r')?\b\.?\s*',
+        r'^([\d/.\s]+(?:and\s+[\d/.\s]+)?)\s*(\([^)]*\)\s*)?(' + '|'.join(COMMON_UNITS) + r')?\b\.?\s*(\([^)]*\)\s*)?',
         text,
         re.IGNORECASE
     )
@@ -161,6 +211,53 @@ def split_ingredient(text):
         if name:
             return measurement, name
     return '', text
+
+# Ingredient lists in the page's HTML, from the recipe card plugins most food blogs use.
+# The recipe data (JSON-LD) is a flat list, so section headings like "Topping" only exist here.
+INGREDIENT_CONTAINERS = [
+    '.tasty-recipes-ingredients',          # Tasty Recipes (Sally's Baking Addiction, ...)
+    '.wprm-recipe-ingredients-container',  # WP Recipe Maker
+    '.mv-create-ingredients',              # Mediavine Create
+]
+HEADING_TAGS = ['h2', 'h3', 'h4', 'h5', 'h6']
+
+
+def clean_text(tag):
+    text = tag.get_text(' ', strip=True)
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r'\(\s+', '(', text)
+    text = re.sub(r'\s+([),.;:])', r'\1', text)
+    return text.strip()
+
+
+def find_ingredient_groups(soup):
+    """Reads the ingredient list with its section headings from the page's HTML.
+
+    Returns a list of (section, text) or None when the page has no sections to keep.
+    """
+    for selector in INGREDIENT_CONTAINERS:
+        box = soup.select_one(selector)
+        if not box:
+            continue
+        rows = []
+        section = None
+        found_section = False
+        for tag in box.find_all(lambda t: t.name in HEADING_TAGS or t.name == 'li'
+                                or 'wprm-recipe-group-name' in (t.get('class') or [])):
+            text = clean_text(tag)
+            if not text:
+                continue
+            if tag.name == 'li':
+                if tag.find('li'):
+                    continue  # a list wrapping other items, not an ingredient itself
+                rows.append((section, text))
+            elif text.lower().rstrip(':') != 'ingredients':
+                section = text.rstrip(':')
+                found_section = True
+        if found_section and rows:
+            return rows
+    return None
+
 
 # define a route for the root URL
 @app.route("/")
@@ -214,6 +311,12 @@ def import_recipe():
         return render_template('add.html', import_error="Couldn't find recipe data on that page. Try entering it manually.")
 
     data = extract_recipe_data(recipe_json)
+
+    # Use the page's own list when it groups ingredients under headings, as long as it
+    # has at least everything the recipe data lists
+    groups = find_ingredient_groups(soup)
+    if groups and len(groups) >= len(data['ingredients']):
+        data['ingredients'] = [(section, *split_ingredient(text)) for section, text in groups]
 
 
     # Download the recipe's photo now, so it's ready to attach if the form is saved
@@ -294,23 +397,8 @@ def submit():
     
     print("Recipe ID:", recipe_id)
 
-    # Add ingredients
-    ingredient_names = request.form.getlist('ingredient_name[]')
-    measurements = request.form.getlist('measurement[]')
-    for ingredient_name, measurement in zip(ingredient_names, measurements):
-        if not ingredient_name:
-            continue
-        try:
-            cur.execute(
-                """
-                INSERT INTO ingredients (recipe_id, ingredient_name, measurement)
-                VALUES (?, ?, ?)
-                """,
-                (recipe_id, ingredient_name, measurement)
-            )
-        except sqlite3.IntegrityError:
-            # Duplicate ingredient name for this recipe — skip rather than crash
-            continue
+    # Add ingredients, with any section headings
+    save_ingredients(cur, recipe_id, read_ingredient_rows(request.form))
 
     # Add instructions
     instructions = request.form.getlist('instruction[]')
@@ -376,10 +464,13 @@ def all_recipes():
 def recipe_details(id):
     conn = get_db_connection() 
     recipe = conn.execute('SELECT * FROM recipes WHERE id = ?', (id,)).fetchone()  # Use fetchone() instead of fetchall()
-    ingredients = conn.execute('SELECT ingredient_name, measurement FROM ingredients WHERE recipe_id = ?', (id,)).fetchall()
+    ingredients = load_ingredients(conn, id)
     instructions = conn.execute('SELECT step_number, instruction FROM instructions WHERE recipe_id = ? ORDER BY step_number', (id,)).fetchall()
     conn.close()
-    return render_template('index.html', recipe=recipe, ingredients=ingredients, instructions=instructions)
+    # Consecutive ingredients under the same heading, e.g. [("Topping", [...]), ("Muffins", [...])]
+    ingredient_groups = [(section, list(rows)) for section, rows in groupby(ingredients, key=lambda row: row['section'])]
+    return render_template('index.html', recipe=recipe, ingredients=ingredients,
+                           ingredient_groups=ingredient_groups, instructions=instructions)
 
 @app.route('/<string:category>')
 def category_recipes(category):
@@ -465,12 +556,7 @@ def modify_recipe(id):
             cur.execute("DELETE FROM instructions WHERE recipe_id = ?", (id,))
             conn.commit()
             
-            for name, meas in zip(request.form.getlist('ingredient_name[]'), request.form.getlist('measurement[]')):
-                if name and meas:
-                    cur.execute("""
-                        INSERT INTO ingredients (recipe_id, ingredient_name, measurement)
-                        VALUES (?, ?, ?)
-                    """, (id, name, meas))
+            save_ingredients(cur, id, read_ingredient_rows(request.form))
             
             instructions = request.form.getlist('instruction[]')
             for i, inst in enumerate(instructions, 1):
@@ -500,8 +586,7 @@ def modify_recipe(id):
         if not recipe:
             conn.close()
             return "Recipe not found", 404
-        cur.execute("SELECT ingredient_name, measurement FROM ingredients WHERE recipe_id = ?", (id,))
-        ingredients = cur.fetchall()
+        ingredients = load_ingredients(conn, id)
         cur.execute("SELECT step_number, instruction FROM instructions WHERE recipe_id = ? ORDER BY step_number", (id,))
         instructions = cur.fetchall()
         conn.close()

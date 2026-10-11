@@ -886,6 +886,14 @@ h1, h2, h3 {
     padding: 0;
 }
 
+.ingredient-section {
+    margin: 18px 0 2px;
+    font-family: var(--font-serif);
+    font-weight: 400;
+    font-size: 20px;
+    color: var(--rose-deep);
+}
+
 .ingredient-list li + li {
     border-top: 1px solid #EFD9D4;
 }
@@ -1187,6 +1195,57 @@ textarea.field-input {
     color: var(--muted);
 }
 
+/* A section heading inside the ingredient list, e.g. "Topping" */
+.section-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 72px;
+    gap: 10px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.row-list > .section-row:first-child {
+    margin-top: 0;
+}
+
+.section-input {
+    font-family: var(--font-serif);
+    font-size: 20px;
+    color: var(--rose-deep);
+    background: var(--cream);
+}
+
+.section-move {
+    display: flex;
+    gap: 2px;
+}
+
+.move-row {
+    border: 0;
+    font: inherit;
+    font-size: 18px;
+    line-height: 1;
+    padding: 8px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.move-row:hover {
+    color: var(--rose-deep);
+    background: var(--cream);
+}
+
+.row-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.row-buttons + .form-hint {
+    margin-top: 10px;
+}
+
 .row-list {
     display: grid;
     gap: 10px;
@@ -1277,6 +1336,9 @@ textarea.field-input {
     .field-grid { grid-template-columns: minmax(0, 1fr); }
     .import-form { flex-direction: column; }
     .row-labels, .ingredient-row { grid-template-columns: minmax(0, 96px) minmax(0, 1fr) 64px; gap: 8px; }
+    .section-row { grid-template-columns: minmax(0, 1fr) auto 64px; gap: 8px; }
+    .section-input { font-size: 18px; }
+    .move-row { padding: 8px 6px; }
     .instruction-row { grid-template-columns: 28px minmax(0, 1fr) 64px; gap: 8px; }
     .instruction-row::before { width: 28px; height: 28px; font-size: 13px; }
 }

@@ -1,4 +1,4 @@
-{% from '_recipe_form.html' import details, ingredient_row, instruction_row, ingredients_card, instructions_card %}
+{% from '_recipe_form.html' import details, ingredient_rows, instruction_row, ingredients_card, instructions_card %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -26,9 +26,7 @@
             <input type="hidden" name="image" value="{{ recipe['image'] or '' }}">
 
             {% call ingredients_card() %}
-                {% for ing in ingredients %}
-                    {{ ingredient_row(ing['measurement'], ing['ingredient_name']) }}
-                {% endfor %}
+                {{ ingredient_rows(ingredients) }}
             {% endcall %}
 
             {% call instructions_card() %}
