@@ -18,6 +18,6 @@ Tech Stack
 
 Database Schema
 - recipes: id, name, type, cuisine, season, author, total_time, yield, image
-- ingredients: id, recipe_id, ingredient_name, measurement
+- ingredients: id, recipe_id, section, position, ingredient_name, measurement (section is an optional heading such as "Topping"; position keeps the list in order)
 - instructions: id, recipe_id, step_number, instruction
-- connections: link specific ingredients to specific instruction steps
+- connections: link specific ingredients (by ingredient id) to specific instruction steps

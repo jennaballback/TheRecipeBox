@@ -64,10 +64,35 @@
 
 {% macro ingredient_row(amount='', name='', amount_required=true) %}
 <div class="ingredient-row">
+    <input type="hidden" name="row_kind[]" value="ingredient">
     <input type="text" class="field-input" name="measurement[]" value="{{ amount or '' }}" placeholder="e.g., 1 cup" aria-label="Amount" {% if amount_required %}required{% endif %}>
     <input type="text" class="field-input" name="ingredient_name[]" value="{{ name }}" placeholder="e.g., Flour" aria-label="Ingredient" required>
     <button type="button" class="btn-text remove-row">Remove</button>
 </div>
+{% endmacro %}
+
+{# A heading like "Topping" that groups the ingredients below it #}
+{% macro section_row(name='') %}
+<div class="section-row">
+    <input type="hidden" name="row_kind[]" value="section">
+    <input type="hidden" name="measurement[]" value="">
+    <input type="text" class="field-input section-input" name="ingredient_name[]" value="{{ name }}" placeholder="Section, e.g., Topping" aria-label="Section name" required>
+    <div class="section-move">
+        <button type="button" class="btn-text move-row" data-dir="up" aria-label="Move section up" title="Move up">&uarr;</button>
+        <button type="button" class="btn-text move-row" data-dir="down" aria-label="Move section down" title="Move down">&darr;</button>
+    </div>
+    <button type="button" class="btn-text remove-row">Remove</button>
+</div>
+{% endmacro %}
+
+{# rows are (section, measurement, name); a heading row goes in wherever the section changes #}
+{% macro ingredient_rows(rows, amount_required=true) %}
+{% set ns = namespace(section=none) %}
+{% for section, measurement, name in rows %}
+    {% if section and section != ns.section %}{{ section_row(section) }}{% endif %}
+    {% set ns.section = section %}
+    {{ ingredient_row(measurement, name, amount_required=amount_required and measurement) }}
+{% endfor %}
 {% endmacro %}
 
 {% macro instruction_row(text='') %}
@@ -84,7 +109,11 @@
     <div id="ingredients-container" class="row-list">
         {{ caller() }}
     </div>
-    <button type="button" id="add-ingredient" class="btn btn-ghost">+ Add ingredient</button>
+    <div class="row-buttons">
+        <button type="button" id="add-ingredient" class="btn btn-ghost">+ Add ingredient</button>
+        <button type="button" id="add-section" class="btn btn-ghost">+ Add section</button>
+    </div>
+    <p class="form-hint">Use sections to split the list into parts, like Topping and Muffins. Move a section's heading with the arrows.</p>
 </section>
 {% endmacro %}
 

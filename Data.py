@@ -6,11 +6,11 @@ db = Database("recipedatabase.db")
 recipe_id = db.add_data(("Omelette", "Breakfast", "French", None, "Chef Marie", "15 Min"))
 print(f"Added Recipe ID: {recipe_id}")
 
-# Step 2: Add ingredients
-db.add_ingredient(recipe_id, "Egg", "2")
-db.add_ingredient(recipe_id, "Cheese", "1/4 cup")
-db.add_ingredient(recipe_id, "Salt", "1/4 tsp")
-db.add_ingredient(recipe_id, "Pepper", "1/8 tsp")
+# Step 2: Add ingredients (add_ingredient returns each one's id)
+egg_id = db.add_ingredient(recipe_id, "Egg", "2", position=1)
+cheese_id = db.add_ingredient(recipe_id, "Cheese", "1/4 cup", position=2)
+salt_id = db.add_ingredient(recipe_id, "Salt", "1/4 tsp", position=3)
+pepper_id = db.add_ingredient(recipe_id, "Pepper", "1/8 tsp", position=4)
 print("Ingredients added.")
 
 # Step 3: Add instructions
@@ -22,20 +22,20 @@ print("Instructions added.")
 # Step 4: Add connections (linking ingredients to instructions)
 cur = db.conn.cursor()
 cur.execute(
-    "INSERT INTO connections (recipe_id, step_number, ingredient_name, measurement) VALUES (?, ?, ?, ?)",
-    (recipe_id, 1, "Egg", "2")
+    "INSERT INTO connections (recipe_id, step_number, ingredient_id) VALUES (?, ?, ?)",
+    (recipe_id, 1, egg_id)
 )
 cur.execute(
-    "INSERT INTO connections (recipe_id, step_number, ingredient_name, measurement) VALUES (?, ?, ?, ?)",
-    (recipe_id, 1, "Salt", "1/4 tsp")
+    "INSERT INTO connections (recipe_id, step_number, ingredient_id) VALUES (?, ?, ?)",
+    (recipe_id, 1, salt_id)
 )
 cur.execute(
-    "INSERT INTO connections (recipe_id, step_number, ingredient_name, measurement) VALUES (?, ?, ?, ?)",
-    (recipe_id, 1, "Pepper", "1/8 tsp")
+    "INSERT INTO connections (recipe_id, step_number, ingredient_id) VALUES (?, ?, ?)",
+    (recipe_id, 1, pepper_id)
 )
 cur.execute(
-    "INSERT INTO connections (recipe_id, step_number, ingredient_name, measurement) VALUES (?, ?, ?, ?)",
-    (recipe_id, 3, "Cheese", "1/4 cup")
+    "INSERT INTO connections (recipe_id, step_number, ingredient_id) VALUES (?, ?, ?)",
+    (recipe_id, 3, cheese_id)
 )
 db.conn.commit()
 print("Connections added.")
