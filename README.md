@@ -2,14 +2,16 @@
 
 A personal recipe management website built with Flask and SQLite. Add, browse, search, filter, and edit your own recipes, complete with photos, ingredients, step-by-step instructions, and seasonal organization.
 
-Features
-- Add recipes with name, type, cuisine, season, author, total time, yield, ingredients, instructions, and a photo
-- Import a recipe directly from a URL, automatically pulling all the information from sites that support recipe structured data
-- Category pages for Breakfast, Lunch, Dinner, and Dessert
-- Search recipes by name, type, or cuisine
-- Filter by cuisine or season via a sidebar menu that slides in from the side
-- Homepage highlights, including a "Latest Recipes" grid and a seasonal "favorites" section that automatically updates based on the current month
-- A recipe details page with a checklist style ingredient list, numbered step instructions, and a print friendly layout
+
+## Features
+
+- **Add and edit recipes** with name, type, cuisine, season, author, total time, yield, photo, ingredients and instructions. Ingredients can be grouped under section headings such as "Crust" or "Topping".
+- **Import from a link.** Paste a recipe URL and the app reads the page's schema.org Recipe data (JSON-LD), converts ISO 8601 durations like `PT1H15M` into readable times, and splits each ingredient line into a measurement and a name. Ingredient sections are kept for Tasty Recipes, WP Recipe Maker and Mediavine Create recipe cards.
+- **Categories:** Breakfast, Lunch, Dinner, Dessert and Sides, each with its own page.
+- **Search** by name, type or cuisine, and **filter** by cuisine or season from the side menu.
+- **Home page** with a "Latest Recipes" grid and a seasonal favorites section that follows the current month.
+- **Recipe page** with a checklist-style ingredient list, numbered steps and a print-friendly layout.
+- **Delete with confirmation.** A popup asks before deleting; the recipe's 
 
 Tech Stack
 - Backend: Python, Flask
