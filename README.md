@@ -11,7 +11,6 @@ A personal recipe management website built with Flask and SQLite. Add, browse, s
 - **Search** by name, type or cuisine, and **filter** by cuisine or season from the side menu.
 - **Home page** with a "Latest Recipes" grid and a seasonal favorites section that follows the current month.
 - **Recipe page** with a checklist-style ingredient list, numbered steps and a print-friendly layout.
-- **Delete with confirmation.** A popup asks before deleting; the recipe's 
 
 Tech Stack
 - Backend: Python, Flask
